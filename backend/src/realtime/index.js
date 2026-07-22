@@ -33,4 +33,5 @@ module.exports = {
   setIo,
   emitToBoard,
   logActivity,
+  boardRoom,
 };
