@@ -7,7 +7,7 @@ let client = null;
 const getClient = () => {
   const key = process.env.GOOGLE_AI_API_KEY;
   if (!key || key === "your-gemini-api-kye") {
-    throw ApiError(503, "Google AI API key is not provided");
+    throw new ApiError(503, "Google AI API key is not provided");
   }
 
   if (!client) {
@@ -104,7 +104,7 @@ const breakdownTask = async (title, description = "", count = 5) => {
 const summarizeBoard = async ({ boardTitle, columns }) => {
   const snapshot = columns.map(
     (c) =>
-      `${title} (${c.tasks.length}):\n` +
+      `${c.title} (${c.tasks.length}):\n` +
       (c.tasks.map((t) => `  - ${t.title} [${t.priority}]`).join("\n") ||
         "none"),
   );

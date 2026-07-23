@@ -87,6 +87,11 @@ const createTask = asyncHandler(async (req, res) => {
   if (!title) throw ApiError.badRequest("Task title is required");
   if (!column_id) throw ApiError.badRequest("Column is required");
 
+  const isOwnerOrAdmin = ["owner", "admin"].includes(req.board.role);
+  if (assignee_id && !isOwnerOrAdmin && assignee_id !== req.user.id) {
+    throw ApiError.forbidden("Members can only assign tasks to themselves");
+  }
+
   await ensureColumnInBoard(column_id, req.board.id);
 
   const posRes = await query(
@@ -131,6 +136,11 @@ const updateTask = asyncHandler(async (req, res) => {
   if (priority !== undefined && !PRIORITIES.includes(req.body.priority))
     throw ApiError.badRequest("Invalid priority");
 
+  const isOwnerOrAdmin = ["owner", "admin"].includes(req.board.role);
+  if (assignee_id && !isOwnerOrAdmin && assignee_id !== req.user.id) {
+    throw ApiError.forbidden("Members can only assign tasks to themselves");
+  }
+
   const { rows } = await query(
     `UPDATE tasks
     SET 
@@ -171,11 +181,17 @@ const moveTask = asyncHandler(async (req, res) => {
   await ensureColumnInBoard(column_id, req.board.id);
 
   const prevRes = await query(
-    "SELECT t.column_id, c.title FROM tasks t JOIN columns c ON c.id = t.column_id WHERE t.id = $1 AND t.board_id = $2",
+    "SELECT t.column_id, t.assignee_id, c.title FROM tasks t JOIN columns c ON c.id = t.column_id WHERE t.id = $1 AND t.board_id = $2",
     [req.params.taskId, req.board.id],
   );
 
   if (!prevRes.rows.length) throw ApiError.notFound("Task not found");
+
+  const isOwnerOrAdmin = ["owner", "admin"].includes(req.board.role);
+  const isAssignee = prevRes.rows[0].assignee_id === req.user.id;
+  if (!isOwnerOrAdmin && !isAssignee) {
+    throw ApiError.forbidden("Only the assignee, owner, or admin can move this task");
+  }
 
   const movedColumns = prevRes.rows[0].column_id !== column_id;
 
@@ -210,11 +226,23 @@ const moveTask = asyncHandler(async (req, res) => {
 
 const deleteTask = asyncHandler(async (req, res) => {
   const { rows } = await query(
+    "SELECT assignee_id FROM tasks WHERE id = $1 AND board_id = $2",
+    [req.params.taskId, req.board.id],
+  );
+  if (!rows.length) throw ApiError.notFound("Task not found");
+
+  const isOwnerOrAdmin = ["owner", "admin"].includes(req.board.role);
+  const isAssignee = rows[0].assignee_id === req.user.id;
+  if (!isOwnerOrAdmin && !isAssignee) {
+    throw ApiError.forbidden("Only the assignee, owner, or admin can delete this task");
+  }
+
+  const { rows: delRows } = await query(
     "DELETE FROM tasks WHERE id = $1 AND board_id = $2 RETURNING title",
     [req.params.taskId, req.board.id],
   );
 
-  if (!rows.length) throw ApiError.notFound("Task not found");
+  if (!delRows.length) throw ApiError.notFound("Task not found");
 
   emitToBoard(req.board.id, "task:deleted", { id: req.params.taskId });
   await logActivity({

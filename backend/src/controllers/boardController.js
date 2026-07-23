@@ -113,7 +113,7 @@ const updateBoard = asyncHandler(async (req, res) => {
 const deleteBoard = asyncHandler(async (req, res) => {
   if (req.board.role !== "owner")
     throw ApiError.forbidden("Only the owner can delete this board");
-  await query("DELETE FROM boards WHERE id = $1", [req.body.id]);
+  await query("DELETE FROM boards WHERE id = $1", [req.board.id]);
   emitToBoard(req.board.id, "board:deleted", { id: req.board.id });
 
   res.json({ success: true });
@@ -139,9 +139,16 @@ const addMember = asyncHandler(async (req, res) => {
     throw ApiError.forbidden("Only owner or admin can add members");
 
   const email = (req.body.email || "").trim().toLowerCase();
-  const role = req.body.role === "admin" ? "admin" : "member";
+  const requestedRole = req.body.role === "admin" ? "admin" : "member";
 
   if (!email) throw ApiError.badRequest("Email is required");
+
+  const isOwner = req.board.role === "owner";
+  if (requestedRole === "admin" && !isOwner) {
+    throw ApiError.forbidden("Only the owner can assign admin role");
+  }
+
+  const role = requestedRole;
 
   const userRes = await query(
     "SELECT id, name, email, avatar_url FROM users WHERE email = $1",
@@ -180,6 +187,16 @@ const removeMember = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   if (userId === req.board.owner_id)
     throw ApiError.badRequest("Cannot remove board owner");
+
+  const targetRes = await query(
+    "SELECT role FROM board_members WHERE board_id = $1 AND user_id = $2",
+    [req.board.id, userId],
+  );
+  const targetRole = targetRes.rows[0]?.role;
+
+  if (targetRole === "admin" && req.board.role !== "owner") {
+    throw ApiError.forbidden("Only the owner can remove admins");
+  }
 
   await query(
     "DELETE FROM board_members WHERE board_id = $1 AND user_id = $2",
