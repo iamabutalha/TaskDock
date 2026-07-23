@@ -230,6 +230,7 @@ const BoardPage = () => {
         setMembers={b.setMembers}
         canManage={canManage}
         ownerId={b.board?.owner_id}
+        isOwner={b.role === "owner"}
       />
       <ActivityFeed open={activityOpen} onClose={() => setActivityOpen(false)} boardId={boardId} />
       <PromptDialog

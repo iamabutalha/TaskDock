@@ -76,9 +76,14 @@ export const useBoard = (boardId) => {
     const onPresenceLeave = ({ user }) =>
       setPresence((p) => p.filter((u) => u.id !== user.id));
     const onMemberAdded = (m) =>
-      setMembers((p) => (p.find((u) => u.id === m.id) ? p : [...p, m]));
+      setMembers((p) => {
+        const exists = p.find((u) => u.id === m.id);
+        return exists ? p.map((u) => (u.id === m.id ? { ...u, ...m } : u)) : [...p, m];
+      });
     const onMemberRemoved = ({ userId }) =>
       setMembers((p) => p.filter((u) => u.id !== userId));
+    const onMemberUpdated = (m) =>
+      setMembers((p) => p.map((u) => (u.id === m.id ? { ...u, ...m } : u)));
 
     socket.on("task:created", onCreated);
     socket.on("task:updated", onUpdated);
@@ -93,6 +98,7 @@ export const useBoard = (boardId) => {
     socket.on("presence:leave", onPresenceLeave);
     socket.on("member:added", onMemberAdded);
     socket.on("member:removed", onMemberRemoved);
+    socket.on("member:updated", onMemberUpdated);
     return () => {
       socket.emit("board:leave", boardId);
       socket.off("task:created", onCreated);
@@ -108,6 +114,7 @@ export const useBoard = (boardId) => {
       socket.off("presence:leave", onPresenceLeave);
       socket.off("member:added", onMemberAdded);
       socket.off("member:removed", onMemberRemoved);
+      socket.off("member:updated", onMemberUpdated);
       setPresence([]);
     };
   }, [boardId, upsertTask, removeTaskLocal]);

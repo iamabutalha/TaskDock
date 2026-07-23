@@ -23,6 +23,11 @@ router.delete(
   requireBoardAccess,
   board.removeMember,
 );
+router.patch(
+  "/:boardId/members/:userId/role",
+  requireBoardAccess,
+  board.updateMemberRole,
+);
 
 router.post("/:boardId/columns", requireBoardAccess, columns.createColumn);
 router.patch(

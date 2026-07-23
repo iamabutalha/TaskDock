@@ -7,7 +7,7 @@ import { Input } from "../ui/Input";
 import Avatar from "../ui/Avatar";
 import { boardApi } from "../../lib/api";
 
-const MembersModal = ({ open, onClose, boardId, members, setMembers, canManage, ownerId }) => {
+const MembersModal = ({ open, onClose, boardId, members, setMembers, canManage, ownerId, isOwner }) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +39,16 @@ const MembersModal = ({ open, onClose, boardId, members, setMembers, canManage, 
     }
   };
 
+  const changeRole = async (userId, newRole) => {
+    try {
+      const member = await boardApi.updateMemberRole(boardId, userId, newRole);
+      setMembers((prev) => prev.map((m) => (m.id === userId ? { ...m, role: member.role } : m)));
+      toast.success(`Role updated to ${newRole}`);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   return (
     <Modal open={open} onClose={onClose} title="Members" description="Invite teammates to collaborate in real time.">
       {canManage && (
@@ -58,7 +68,18 @@ const MembersModal = ({ open, onClose, boardId, members, setMembers, canManage, 
               <p className="truncate text-sm font-medium">{m.name}</p>
               <p className="truncate text-xs text-faint">{m.email}</p>
             </div>
-            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium capitalize text-muted">{m.role}</span>
+            {isOwner && m.id !== ownerId ? (
+              <select
+                value={m.role}
+                onChange={(e) => changeRole(m.id, e.target.value)}
+                className="h-8 rounded-full border border-line bg-surface pl-3 pr-8 text-xs font-medium capitalize text-muted outline-none focus:border-brand-500/50"
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+            ) : (
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium capitalize text-muted">{m.role}</span>
+            )}
             {canManage && m.id !== ownerId && (
               <button onClick={() => remove(m.id)} className="rounded-full p-1.5 text-faint transition-colors hover:bg-elevated hover:text-priority-urgent">
                 <X className="h-4 w-4" />

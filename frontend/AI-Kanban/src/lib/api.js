@@ -56,6 +56,8 @@ export const boardApi = {
     api.post(`/boards/${id}/members`, data).then((r) => r.data.member),
   removeMember: (id, userId) =>
     api.delete(`/boards/${id}/members/${userId}`).then((r) => r.data),
+  updateMemberRole: (id, userId, role) =>
+    api.patch(`/boards/${id}/members/${userId}/role`, { role }).then((r) => r.data.member),
 };
 
 export const columnApi = {

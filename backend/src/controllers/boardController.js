@@ -208,6 +208,53 @@ const removeMember = asyncHandler(async (req, res) => {
   res.json({ success: true });
 });
 
+const updateMemberRole = asyncHandler(async (req, res) => {
+  if (req.board.role !== "owner")
+    throw ApiError.forbidden("Only the owner can change member roles");
+
+  const { userId } = req.params;
+  const rawRole = (req.body.role || "").trim().toLowerCase();
+  const role = rawRole === "admin" ? "admin" : "member";
+
+  if (userId === req.board.owner_id)
+    throw ApiError.badRequest("Cannot change owner role");
+
+  const targetRes = await query(
+    "SELECT role FROM board_members WHERE board_id = $1 AND user_id = $2",
+    [req.board.id, userId],
+  );
+  const currentRole = targetRes.rows[0]?.role;
+  if (!currentRole) throw ApiError.notFound("Member not found");
+
+  if (currentRole === role) {
+    const u = await query("SELECT id, name, email, avatar_url FROM users WHERE id = $1", [userId]);
+    return res.json({ member: { ...u.rows[0], role } });
+  }
+
+  await query(
+    "UPDATE board_members SET role = $1 WHERE board_id = $2 AND user_id = $3",
+    [role, req.board.id, userId],
+  );
+
+  const userRes = await query(
+    "SELECT id, name, email, avatar_url FROM users WHERE id = $1",
+    [userId],
+  );
+  const member = { ...userRes.rows[0], role };
+
+  emitToBoard(req.board.id, "member:updated", member);
+
+  await logActivity({
+    boardId: req.board.id,
+    userId: req.user.id,
+    action: "member.updated",
+    message: `${req.user.name} changed ${member.name}'s role to ${role}`,
+    metadata: { memberId: userId, role },
+  });
+
+  res.json({ member });
+});
+
 module.exports = {
   listBoards,
   createBoard,
@@ -217,4 +264,5 @@ module.exports = {
   getActivity,
   addMember,
   removeMember,
+  updateMemberRole,
 };
