@@ -28,7 +28,7 @@ router.post("/:boardId/columns", requireBoardAccess, columns.createColumn);
 router.patch(
   "/:boardId/columns/:columnId",
   requireBoardAccess,
-  columns.updateColumn,
+  columns.updateColumns,
 );
 
 router.delete(
@@ -37,15 +37,15 @@ router.delete(
   columns.deleteColumn,
 );
 
-router.get(":/boardId/tasks", requireBoardAccess, tasks.listTasks);
-router.post(":/boardId/tasks", requireBoardAccess, tasks.createTask);
-router.patch(":/boardId/tasks/:taskId", requireBoardAccess, tasks.createTask);
+router.get("/:boardId/tasks", requireBoardAccess, tasks.listTasks);
+router.post("/:boardId/tasks", requireBoardAccess, tasks.createTask);
+router.patch("/:boardId/tasks/:taskId", requireBoardAccess, tasks.updateTask);
 router.patch(
-  ":/boardId/tasks/:taskId/move",
+  "/:boardId/tasks/:taskId/move",
   requireBoardAccess,
   tasks.moveTask,
 );
-router.delete(":/boardId/tasks/:taskId", requireBoardAccess, tasks.createTask);
+router.delete("/:boardId/tasks/:taskId", requireBoardAccess, tasks.deleteTask);
 
 router.post(
   "/:boardId/ai/generate-tasks",

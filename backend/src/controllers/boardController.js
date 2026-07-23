@@ -8,7 +8,7 @@ const DEFAULT_COLUMNS = ["Todo", "In Progress", "Review", "Done"];
 const listBoards = asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT b.*, 
-                    (b.owner_id=$1)    AS is_owner
+                    (b.owner_id = $1) AS is_owner,
                     (SELECT COUNT(*) FROM tasks t WHERE t.board_id = b.id) AS task_count,
                     (SELECT COUNT(*) FROM board_members m WHERE m.board_id = b.id) AS member_count
                 FROM boards b
@@ -59,12 +59,12 @@ const getBoard = asyncHandler(async (req, res) => {
 
   const [boardRes, columnsRes, tasksRes, memberRes] = await Promise.all([
     query("SELECT * FROM boards WHERE id = $1", [boardId]),
-    query("SELECT * FROM  colums WHERE board_id  = $1 ORDER BY position ASC", [
+    query("SELECT * FROM columns WHERE board_id  = $1 ORDER BY position ASC", [
       boardId,
     ]),
     query(
       `SELECT t.*, a.name AS assignee_name, a.email AS assignee_email, a.avatar_url AS assignee_avatar  
-       FROM task t
+       FROM tasks t
         LEFT JOIN users a ON a.id = t.assignee_id WHERE t.board_id = $1
         ORDER BY t.position ASC `,
       [boardId],

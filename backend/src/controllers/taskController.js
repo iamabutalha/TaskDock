@@ -116,11 +116,11 @@ const createTask = asyncHandler(async (req, res) => {
   emitToBoard(req.board.id, "task:created", task);
 
   await logActivity({
-    board_id: req.board.id,
-    user_id: req.user.id,
-    type: "task.created",
+    boardId: req.board.id,
+    userId: req.user.id,
+    action: "task.created",
     message: `${req.user.name} created task ${task.title}`,
-    meta: { task_id: task.id },
+    metadata: { task_id: task.id },
   });
 
   res.status(201).json({ task });
@@ -139,13 +139,14 @@ const updateTask = asyncHandler(async (req, res) => {
     description = COALESCE($4, description),
     priority = COALESCE($5, priority),
     due_date = COALESCE($6, due_date),
-    assignee_id = $7
+    assignee_id = COALESCE($7, assignee_id),
     updated_at = now()
     WHERE id = $1 AND board_id = $2
     RETURNING id
     `,
     [
       req.params.taskId,
+      req.board.id,
       title ?? null,
       description ?? null,
       priority ?? null,
@@ -181,7 +182,7 @@ const moveTask = asyncHandler(async (req, res) => {
   const { rows } = await query(
     `
     UPDATE tasks 
-    SET column_id = $3, position = $4 updated_at = now()
+    SET column_id = $3, position = $4, updated_at = now()
     WHERE id = $1 AND board_id = $2
     RETURNING id
     `,
@@ -192,15 +193,15 @@ const moveTask = asyncHandler(async (req, res) => {
   emitToBoard(req.board.id, "task:moved", task);
 
   if (movedColumns) {
-    const colRes = await ("SELECT title FROM columns WHERE id = $1",
+    const colRes = await query("SELECT title FROM columns WHERE id = $1",
     [column_id]);
 
     await logActivity({
       boardId: req.board.id,
       userId: req.user.id,
-      type: "task.moved",
+      action: "task.moved",
       message: `${req.user.name} moved task ${task.title} to column ${colRes.rows[0].title}`,
-      meta: { task_id: task.id, column_id: task.column_id },
+      metadata: { task_id: task.id, column_id: task.column_id },
     });
   }
 
@@ -219,9 +220,9 @@ const deleteTask = asyncHandler(async (req, res) => {
   await logActivity({
     boardId: req.board.id,
     userId: req.user.id,
-    type: "task.deleted",
+    action: "task.deleted",
     message: `${req.user.name} deleted task ${rows[0].title}`,
-    meta: { task_id: req.params.taskId },
+    metadata: { task_id: req.params.taskId },
   });
 
   res.json({ success: true });

@@ -11,7 +11,7 @@ const emitToBoard = (boardId, event, payload) => {
 };
 
 const logActivity = async ({ boardId, userId, action, message, metadata }) => {
-  const { rows } = query(
+  const { rows } = await query(
     `INSERT INTO activities (board_id, user_id, action, message, metadata) 
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, board_id, user_id, action, message, metadata, created_at`,
@@ -21,7 +21,7 @@ const logActivity = async ({ boardId, userId, action, message, metadata }) => {
       action,
       message,
       metadata ? JSON.stringify(metadata) : null,
-    ]``,
+    ],
   );
   const activity = rows[0];
   emitToBoard(boardId, "activity_log", activity);

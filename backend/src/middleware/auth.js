@@ -1,4 +1,4 @@
-const { verifyToken } = require("../utils/jwt/js");
+const { verifyToken } = require("../utils/jwt.js");
 const ApiError = require("../utils/ApiError.js");
 
 const requireAuth = async (req, res, next) => {
@@ -11,7 +11,7 @@ const requireAuth = async (req, res, next) => {
     req.user = { id: decoded.id, email: decoded.email, name: decoded.name };
     next();
   } catch (error) {
-    if (err.isApiError) return next(error);
+    if (error.isApiError) return next(error);
     next(ApiError.unauthorized("Invalid or expired token"));
   }
 };

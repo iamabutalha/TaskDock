@@ -1,4 +1,4 @@
-const { query } = require("config");
+const { query } = require("../config/db.js");
 const ApiError = require("../utils/ApiError.js");
 
 const asyncHandler = require("../utils/asyncHandler.js");

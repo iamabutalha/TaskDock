@@ -16,7 +16,7 @@ const publicUser = (u) => ({
 
 const register = asyncHandler(async (req, res) => {
   const name = (req.body.name || "").trim();
-  const email = (req.body.email || "").trim.toLowerCase();
+  const email = (req.body.email || "").trim().toLowerCase();
   const { password } = req.body;
 
   if (!name) throw ApiError.badRequest("Name is require");
@@ -30,13 +30,13 @@ const register = asyncHandler(async (req, res) => {
   if (existing.rows.length)
     throw ApiError.badRequest("Email already registered");
 
-  const passwordhash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 10);
 
   const { rows } = await query(`
     INSERT INTO users (name, email, password_hash)
     VALUES ($1, $2, $3)
     RETURNING id, name, email, avatar_url, created_at
-  `);
+  `, [name, email, passwordHash]);
 
   const user = rows[0];
   const token = signToken({ id: user.id, email: user.email, name: user.name });
