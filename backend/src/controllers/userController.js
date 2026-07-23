@@ -10,9 +10,9 @@ const searchUser = asyncHandler(async (req, res) => {
     FROM users
     WHERE name ILIKE $1 OR email ILIKE  $1
     ORDER BY name ASC
-    LIMIT
+    LIMIT $2
     `,
-    [`%${q}%`],
+    [`%${q}%`, 10],
   );
 
   res.json({ users: rows });

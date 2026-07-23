@@ -55,18 +55,18 @@ const initSocket = (httpServer) => {
 
         const room = boardRoom(baordId);
         socket.join(room);
-        socket.to(room).emit("presense:join", {
+        socket.to(room).emit("presence:join", {
           user: { id: user.id, name: user.name },
-          boardId,
+          boardId: baordId,
         });
 
-        const socket = await io.in(room).fetchSockets();
+        const sockets = await io.in(room).fetchSockets();
         const seen = new Set([user.id]);
         const viewers = [];
 
-        for (const s of socket) {
+        for (const s of sockets) {
           const u = s.data?.user;
-          if (u && !seen.has(u.id)) continue;
+          if (u && seen.has(u.id)) continue;
           seen.add(u.id);
           viewers.push({ id: u.id, name: u.name });
         }
@@ -101,6 +101,7 @@ const initSocket = (httpServer) => {
         if (room === socket.id) continue;
         socket.to(room).emit("presence:leave", {
           user: { id: user.id, name: user.name },
+          boardId: room,
         });
       }
     });

@@ -1,6 +1,6 @@
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
-const { pool, withTrasaction } = require("../config/db.js");
+const { pool, withTransaction } = require("../config/db.js");
 
 const PASSWORD = "Test@1234";
 const DAY = 86400000;
@@ -171,7 +171,7 @@ const DUE_CYCLE = [
 ];
 
 const run = async () => {
-  await withTrasaction(async (c) => {
+  await withTransaction(async (c) => {
     await c.query("DELETE FROM users WHERE email = ANY($1)", [
       USERS.map((u) => u.email.toLowerCase()),
     ]);

@@ -1,8 +1,8 @@
 const { query } = require("../config/db.js");
 
 let io = null;
-const setIo = (instace) => {
-  io = instace;
+const setIo = (instance) => {
+  io = instance;
 };
 
 const boardRoom = (boardId) => `board:${boardId}`;
@@ -24,7 +24,7 @@ const logActivity = async ({ boardId, userId, action, message, metadata }) => {
     ],
   );
   const activity = rows[0];
-  emitToBoard(boardId, "activity_log", activity);
+  emitToBoard(boardId, "activity:new", activity);
 
   return activity;
 };

@@ -71,7 +71,7 @@ const me = asyncHandler(async (req, res) => {
   ]);
   const user = rows[0];
   if (!user) throw ApiError.unauthorized("User not found");
-  res.json({ user: rows[0] });
+  res.json({ user: publicUser(user) });
 });
 
 module.exports = {

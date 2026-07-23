@@ -13,12 +13,12 @@ const pool = new Pool({
 });
 
 pool.on("error", (err) => {
-  console.error("Unexpacted Postgres pool error");
+  console.error("Unexpected Postgres pool error");
 });
 
 const query = (text, params) => pool.query(text, params);
 
-const withTrasaction = async (callback) => {
+const withTransaction = async (callback) => {
   const client = await pool.connect();
 
   try {
@@ -34,4 +34,4 @@ const withTrasaction = async (callback) => {
   }
 };
 
-module.exports = { pool, query, withTrasaction };
+module.exports = { pool, query, withTransaction };

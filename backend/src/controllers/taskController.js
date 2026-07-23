@@ -95,7 +95,7 @@ const createTask = asyncHandler(async (req, res) => {
   );
 
   const { rows } = await query(
-    `INSERT INTO tasks (board_id, column_id, title, decription, priority, due_date, assignee_id, position, created_by)
+    `INSERT INTO tasks (board_id, column_id, title, description, priority, due_date, assignee_id, position, created_by)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *
     `,

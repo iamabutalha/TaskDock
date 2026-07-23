@@ -1,4 +1,4 @@
-const { query, withTrasaction } = require("../config/db.js");
+const { query, withTransaction } = require("../config/db.js");
 const ApiError = require("../utils/ApiError.js");
 const asyncHandler = require("../utils/asyncHandler.js");
 const { emitToBoard, logActivity } = require("../realtime/index.js");
@@ -28,7 +28,7 @@ const createBoard = asyncHandler(async (req, res) => {
 
   if (!title) throw ApiError.badRequest("Title is required");
 
-  const board = await withTrasaction(async (client) => {
+  const board = await withTransaction(async (client) => {
     const { rows } = await client.query(
       `INSERT INTO boards(title, description, color, owner_id)
         VALUES($1, $2, $3, $4) RETURNING *`,
@@ -99,9 +99,9 @@ const updateBoard = asyncHandler(async (req, res) => {
     SET title = COALESCE($2, title),
     description = COALESCE($3, description),
     color = COALESCE($4, color),
-    update_at = now()
+    updated_at = now()
     WHERE id = $1
-    RETRUNING *
+    RETURNING *
     `,
     [req.board.id, title ?? null, description ?? null, color ?? null],
   );
@@ -139,7 +139,7 @@ const addMember = asyncHandler(async (req, res) => {
     throw ApiError.forbidden("Only owner or admin can add members");
 
   const email = (req.body.email || "").trim().toLowerCase();
-  const role = req.body.role || "admin" ? "admin" : "member";
+  const role = req.body.role === "admin" ? "admin" : "member";
 
   if (!email) throw ApiError.badRequest("Email is required");
 
@@ -159,6 +159,8 @@ const addMember = asyncHandler(async (req, res) => {
     ON CONFLICT (board_id, user_id) DO UPDATE SET role = EXCLUDED.role`,
     [req.board.id, user.id, role],
   );
+
+  emitToBoard(req.board.id, "member:added", { ...user, role });
 
   await logActivity({
     boardId: req.board.id,
@@ -183,6 +185,8 @@ const removeMember = asyncHandler(async (req, res) => {
     "DELETE FROM board_members WHERE board_id = $1 AND user_id = $2",
     [req.board.id, userId],
   );
+
+  emitToBoard(req.board.id, "member:removed", { userId });
 
   res.json({ success: true });
 });

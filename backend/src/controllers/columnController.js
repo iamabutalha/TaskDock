@@ -19,7 +19,7 @@ const createColumn = asyncHandler(async (req, res) => {
     [req.board.id, title, posRes.rows[0].pos],
   );
 
-  emitToBoard(boardId, "column:created", rows[0]);
+  emitToBoard(req.board.id, "column:created", rows[0]);
 
   res.status(201).json({ column: rows[0] });
 });
@@ -30,7 +30,7 @@ const updateColumns = asyncHandler(async (req, res) => {
     `
         UPDATE columns
         SET title = COALESCE($3, title),
-        position = COALESCE($4, position),
+        position = COALESCE($4, position)
         WHERE id = $1 AND board_id = $2
         RETURNING *
         `,
