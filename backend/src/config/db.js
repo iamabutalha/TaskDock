@@ -1,13 +1,15 @@
 const { Pool } = require("pg");
 
-const connectionString = (process.env.DATABASE_URL || "").replace(/[?&]sslmode=[^&]+/, "").replace(/[?&]channel_binding=[^&]+/, "");
+const connectionString = (process.env.DATABASE_URL || "")
+  .replace(/[?&]sslmode=[^&]+/, "")
+  .replace(/[?&]channel_binding=[^&]+/, "");
 
 const pool = new Pool({
   connectionString,
   ssl: { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 20000,
 });
 
 pool.on("error", (err) => {

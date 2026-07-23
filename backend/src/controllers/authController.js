@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { query } = require("../config/db.js");
 const { signToken } = require("../utils/jwt.js");
 const ApiError = require("../utils/ApiError.js");
@@ -30,7 +30,7 @@ const register = asyncHandler(async (req, res) => {
   if (existing.rows.length)
     throw ApiError.badRequest("Email already registered");
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordhash = await bcrypt.hash(password, 10);
 
   const { rows } = await query(`
     INSERT INTO users (name, email, password_hash)
